@@ -42,32 +42,7 @@
            {titulo: "Interstellar",  director: "Christopher Nolan", "miniatura": "files/interstellar.png"}
         ];
 
-        let mis_peliculas = [];
-
-        const postAPI = async (peliculas) => {
-            try {
-                const res = await fetch("https://myjson.dit.upm.es/api/bins", {
-                  method: 'POST', 
-                  headers:{
-                      "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(peliculas)
-                });
-                const {uri} = await res.json();
-                return uri;               
-            } catch (err) {
-                alert("No se ha podido crear el endpoint.")
-            }
-        }
-        const getAPI = async () => {
-            // Completar: Llamar a la API para leer la información guardada en myjson a través de la API
-
-          
-        }
-        const updateAPI = async (peliculas) => {
-            // Completar: Actualizar la información a través de la API
-        }
-
+        let mis_peliculas = [...mis_peliculas_iniciales];
  
         // VISTAS
 
@@ -79,20 +54,23 @@
               view += `
                 <div class="movie">
                    <div class="movie-img">
-                        <img class="show" data-my-id="${i}" src="${peliculas[i].miniatura}" onerror="this.src='files/placeholder.png'"/>
+                        <img class="show" data-my-id="${i}" src="${peliculas[i].miniatura}" onerror="this.src='./files/placeholder.png'; console.error('Error al cargar la imagen: ${peliculas[i].miniatura}')"/>
                    </div>
                    <div class="title">
                        ${peliculas[i].titulo || "<em>Sin título</em>"}
                    </div>
                    <div class="actions">
-                       <button class="edit" data-my-id="${i}">editar</button>
+                        <button class="show" data-my-id="${i}">ver</button>
+                        <button class="delete" data-my-id="${i}">borrar</button>
+                        <button class="edit" data-my-id="${i}">editar</button>
                     </div>
                 </div>\n`;
-              i = i + 1;
+              i++;
             };
 
             view += `<div class="actions">
-                        <!--Insertar aquí botones de "Añadir" y "Reset"-->
+                        <button class="new">Nueva Película</button>
+                        <button class="reset">Reiniciar</button>
                     </div>`;
 
             return view;
@@ -122,96 +100,103 @@
                     <button class="index">
                         Volver
                     </button>
-               `;
+                </div>`;
         }
 
         const showView = (pelicula) => {
             // Completar: genera HTML con información de la película
             // ...
-
-            return `
-             <p>
-             
-             
-             </p>
-             <div class="actions">
-                <button class="index">Volver</button>
-             </div>`;
-        }
-
-        const newView = () => {
-            // Completar: genera formulario para crear nuevo quiz
-            // ...
-
-            return `<h2>Crear Película</h2>
+            return `<h2>${pelicula.titulo}</h2>
+                <p>Director: ${pelicula.director}</p>
+                <div class="movie-img">
+                    <img src="${pelicula.miniatura}" alt="Carátula de ${pelicula.titulo}" onerror="this.src='./files/placeholder.png'"/>
+                </div>
                 <div class="actions">
                     <button class="index">Volver</button>
                 </div>`;
         }
 
+        const newView = () => {
+            // Completar: genera formulario para crear nuevo quiz
+            // ...
+            return `
+                <h2>Crear Nueva Película</h2>
+                <div class="field">
+                    <label for="titulo">Título</label><br>
+                    <input type="text" id="titulo" placeholder="Título de la película">
+                </div>
+                <div class="field">
+                    <label for="director">Director</label><br>
+                    <input type="text" id="director" placeholder="Director de la película">
+                </div>
+                <div class="field">
+                    <label for="miniatura">URL de la Miniatura</label><br>
+                    <input type="text" id="miniatura" placeholder="URL de la carátula">
+                </div>
+                <div class="actions">
+                    <button class="create">Crear</button>
+                    <button class="index">Volver</button>
+                </div>`;
+        }
+            
 
         // CONTROLADORES 
 
-        const initContr = async () => {
-            if (!localStorage.URL || localStorage.URL === "undefined") {
-                localStorage.URL = await postAPI(mis_peliculas_iniciales);
-            }
+        const initContr = () => {
             indexContr();
         }
 
-        const indexContr = async () => {
-            mis_peliculas = await getAPI() || [];
-            document.getElementById('main').innerHTML = await indexView(mis_peliculas);
+        const indexContr = () => {
+            document.getElementById('main').innerHTML = indexView(mis_peliculas);
         }
 
         const showContr = (i) => {
-            document.getElementById('main').innerHTML = showView(mis_peliculas[i]);
-            // Completar: controlador que muestra la vista showView()
+            const pelicula = mis_peliculas[i];
+            document.getElementById('main').innerHTML = showView(pelicula);
         }
 
         const newContr = () => {
             document.getElementById('main').innerHTML = newView();
-            // Completar: controlador que muestra la vista newView()
         }
 
-        const createContr = async () => {
-            let nuevaPelicula = {
-                titulo: document.getElementById('titulo').value,
-                director: document.getElementById('director').value,
-                miniatura: document.getElementById('miniatura').value
-            };
-            mis_peliculas.push(nuevaPelicula);
-            await updateAPI(mis_peliculas);
-            indexContr();
-            // Completar: controlador que crea una película nueva en el modelo guardado en myjson
+        const createContr = () => {
+            const titulo = document.getElementById('titulo').value;
+            const director = document.getElementById('director').value;
+            const miniatura = document.getElementById('miniatura').value;
+
+            if (titulo && director && miniatura) {
+                mis_peliculas.push({ titulo, director, miniatura });
+                indexContr();
+            } else {
+                alert("Por favor, completa todos los campos antes de crear la película.");
+            }
         }
 
         const editContr = (i) => {
             document.getElementById('main').innerHTML = editView(i,  mis_peliculas[i]);
         }
 
-        const updateContr = async (i) => {
+        const updateContr = (i) => {
             mis_peliculas[i].titulo   = document.getElementById('titulo').value;
             mis_peliculas[i].director = document.getElementById('director').value;
             mis_peliculas[i].miniatura = document.getElementById('miniatura').value;
-            await updateAPI(mis_peliculas);
             indexContr();
         }
 
-        const deleteContr = async (i) => {
-            if (confirm("¿Estás seguro de que quieres eliminar esta película?")) {
+        const deleteContr = (i) => {
+            const confirmDelete = confirm("¿Estás seguro de que deseas eliminar esta película?");
+            if (confirmDelete) {
                 mis_peliculas.splice(i, 1);
-                await updateAPI(mis_peliculas);
                 indexContr();
             }
-            // Completar:  controlador que actualiza el modelo borrando la película seleccionada
-            // Genera diálogo de confirmación: botón Aceptar devuelve true, Cancel false
         }
 
-        const resetContr = async () => {
-            await updateAPI(mis_peliculas_iniciales);
-            indexContr();
-            // Completar:  controlador que reinicia el modelo guardado en myjson con las películas originales
+        const resetContr = () => {
+            const confirmReset = confirm("¿Estás seguro de que deseas restaurar el modelo al estado inicial?");
+            if (confirmReset) {
+                mis_peliculas = [...mis_peliculas_iniciales];
+                indexContr();
+            }
         }
 
         // ROUTER de eventos
@@ -222,21 +207,25 @@
             if      (matchEvent(ev, '.index'))  indexContr  ();
             else if (matchEvent(ev, '.edit'))   editContr   (myId(ev));
             else if (matchEvent(ev, '.update')) updateContr (myId(ev));
+            else if (matchEvent(ev, '.show'))   showContr(myId(ev));
+            else if (matchEvent(ev, '.new'))    newContr();
+            else if (matchEvent(ev, '.create')) createContr();
+            else if (matchEvent(ev, '.delete')) deleteContr(myId(ev));
+            else if (matchEvent(ev, '.reset'))  resetContr();
         })
-        
-        
+
         // Inicialización        
-        document.addEventListener('DOMContentLoaded', initContr);
+        document.addEventListener('DOMContentLoaded', () => {
+            initContr();
+        });
     </script>
 </head>
 
 <body>
-
     <h1>Mis Películas Favoritas</h1>
-    <div id="main"> 
-      Cargando...
+    <div id="main">
+        <!-- Aquí se mostrarán todas las películas y las acciones disponibles -->
     </div>
-    
 </body>
 </html>
 
