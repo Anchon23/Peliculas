@@ -165,14 +165,24 @@
         }
 
         const showContr = (i) => {
+            document.getElementById('main').innerHTML = showView(mis_peliculas[i]);
             // Completar: controlador que muestra la vista showView()
         }
 
         const newContr = () => {
+            document.getElementById('main').innerHTML = newView();
             // Completar: controlador que muestra la vista newView()
         }
 
         const createContr = async () => {
+            let nuevaPelicula = {
+                titulo: document.getElementById('titulo').value,
+                director: document.getElementById('director').value,
+                miniatura: document.getElementById('miniatura').value
+            };
+            mis_peliculas.push(nuevaPelicula);
+            await updateAPI(mis_peliculas);
+            indexContr();
             // Completar: controlador que crea una película nueva en el modelo guardado en myjson
         }
 
@@ -189,11 +199,18 @@
         }
 
         const deleteContr = async (i) => {
+            if (confirm("¿Estás seguro de que quieres eliminar esta película?")) {
+                mis_peliculas.splice(i, 1);
+                await updateAPI(mis_peliculas);
+                indexContr();
+            }
             // Completar:  controlador que actualiza el modelo borrando la película seleccionada
             // Genera diálogo de confirmación: botón Aceptar devuelve true, Cancel false
         }
 
         const resetContr = async () => {
+            await updateAPI(mis_peliculas_iniciales);
+            indexContr();
             // Completar:  controlador que reinicia el modelo guardado en myjson con las películas originales
         }
 
