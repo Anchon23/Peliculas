@@ -1,0 +1,140 @@
+/* Colores principales */
+:root {
+    --primary: #6200ee;
+    --secondary: #29b6f6;
+    --background: #f3f4f6;
+    --text-color: #333;
+    --button-hover: #3700b3;
+}
+
+body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background);
+    color: var(--text-color);
+}
+
+/* Encabezado principal */
+h1 {
+    background: var(--primary);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 24px;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Subtítulos */
+h2 {
+    font-size: 22px;
+    color: var(--primary);
+    margin: 10px 0;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Botones */
+button {
+    display: inline-block;
+    font-size: 12px;
+    color: var(--primary);
+    background: white;
+    border: 2px solid var(--primary);
+    padding: 8px 12px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.15);
+    margin: 4px;
+}
+
+button:hover {
+    background: var(--button-hover);
+    color: white;
+}
+
+/* Área de contenido principal */
+div#main {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Entradas de texto */
+input {
+    margin-bottom: 10px;
+    margin-top: 4px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+    box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Contenedor de películas */
+div.movie {
+    display: inline-block;
+    width: 220px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    text-align: center;
+    transition: transform 0.2s;
+    align-items: center;
+}
+
+div.movie:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Imagen de la película */
+div.movie div.movie-img {
+    width: 100%;
+    height: auto;
+    min-height: 220px;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+div.movie div.movie-img img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* Título de la película */
+div.movie div.title {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-top: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Campos de formulario */
+div.field {
+    color: var(--primary);
+    text-transform: uppercase;
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* Área de acciones */
+div.actions {
+    margin-top: 20px;
+    text-align: center;
+}
