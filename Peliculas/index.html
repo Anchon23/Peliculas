@@ -136,6 +136,63 @@
             document.getElementById('main').innerHTML = indexView(mis_peliculas);
         }
 
+        const searchContr = async () => {
+            const query = document.getElementById('search').value.trim();
+
+            if (!query) {
+                alert("Por favor, introduce un término de búsqueda.");
+                return;
+            }
+
+            const apiKey = 'f91debdf958962ba91eb336ae9326030';
+            const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("No se pudo completar la búsqueda.");
+
+                const data = await response.json();
+
+                if (data.results && data.results.length > 0) {
+                    const resultadosHTML = data.results.map(pelicula => `
+                        <div class="movie">
+                        <div class="movie-img">
+                            <img src="https://image.tmdb.org/t/p/w200${pelicula.poster_path}" 
+                                    alt="${pelicula.title}" 
+                                    onerror="this.src='./files/placeholder.png'"/>
+                        </div>
+                        <div class="title">${pelicula.title}</div>
+                        <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
+                        </div>
+                    `).join("");
+
+                    document.getElementById('main').innerHTML = `
+                        <h2>Resultados para "${query}"</h2>
+                        <div class="results">${resultadosHTML}</div>
+                        <div class="actions">
+                            <button class="index">Volver</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('main').innerHTML = `
+                        <p>No se encontraron resultados para "${query}".</p>
+                        <div class="actions">
+                            <button class="index">Volver</button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("No se pudo completar la búsqueda. Intenta de nuevo más tarde.");
+            }
+        };
+
+        // Evento para el botón de búsqueda
+        document.addEventListener('click', ev => {
+            if (matchEvent(ev, '.search')) searchContr();
+        });
+
+
         const showContr = (i) => {
             const pelicula = mis_peliculas[i];
             document.getElementById('main').innerHTML = showView(pelicula);
@@ -198,6 +255,7 @@
             else if (matchEvent(ev, '.create')) createContr();
             else if (matchEvent(ev, '.delete')) deleteContr(myId(ev));
             else if (matchEvent(ev, '.reset'))  resetContr();
+            else if (matchEvent(ev, '.search')) searchContr();
         })
 
         // Inicialización        
@@ -210,9 +268,11 @@
 <body>
     <h1>Mis Películas Favoritas</h1>
     <div id="main">
-        <!-- Aquí se mostrarán todas las películas y las acciones disponibles -->
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Buscar película por título o director">
+            <button class="search">Buscar Películas</button>
+        </div>        
     </div>
 </body>
 </html>
-
 

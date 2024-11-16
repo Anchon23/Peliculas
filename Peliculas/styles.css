@@ -138,3 +138,29 @@ div.actions {
     margin-top: 20px;
     text-align: center;
 }
+
+.search-bar {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#search {
+    padding: 8px;
+    width: 50%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.search {
+    padding: 8px 12px;
+    background-color: #29b6f6;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search:hover {
+    background-color: #0277bd;
+}
