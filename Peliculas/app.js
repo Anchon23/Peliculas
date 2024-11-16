@@ -111,52 +111,74 @@ const newView = () => {
 
 const resultsView = (resultados, query) => {
   const resultsContainer = document.getElementById('results');
-  
+
   if (resultados.length === 0) {
     resultsContainer.innerHTML = `<p class="no-results">No se encontraron películas para "${query}".</p>`;
     return;
   }
 
-  const resultadosHTML = resultados.map(pelicula => {
-    const poster = pelicula.poster_path
-      ? `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`
-      : 'https://via.placeholder.com/200x300?text=No+Image';
+  const resultadosHTML = resultados
+    .map((pelicula) => {
+      const poster = pelicula.poster_path
+        ? `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`
+        : 'https://via.placeholder.com/200x300?text=No+Image';
 
-    return `
-      <div class="movie">
-        <div class="movie-img">
-          <img src="${poster}" alt="${pelicula.title}" onerror="this.src='./files/placeholder.png'" />
-        </div>
-        <div class="title">${pelicula.title}</div>
-        <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
-        <button class="add-from-api" data-pelicula='${JSON.stringify(pelicula)}'>Añadir</button>
-      </div>
-    `;
-  }).join("");
+      const background = pelicula.poster_path
+        ? `https://image.tmdb.org/t/p/original${pelicula.poster_path}` // Fondo de alta calidad
+        : 'https://via.placeholder.com/1920x1080?text=No+Image';
 
-  // Renderizar el contenido con el botón "Volver" al inicio
+      return `
+        <div class="swiper-slide" style="background-image: url('${background}');">
+          <div class="movie">
+            <div class="movie-img">
+              <img src="${poster}" alt="${pelicula.title}" onerror="this.src='./files/placeholder.png'" />
+            </div>
+            <div class="title">${pelicula.title}</div>
+            <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
+            <button class="add-from-api" data-pelicula='${JSON.stringify(pelicula)}'>Añadir</button>
+          </div>
+        </div>`;
+    })
+    .join('');
+
   resultsContainer.innerHTML = `
-    <div class="actions">
-      <button class="index">Volver</button>
-    </div>
     <h2>Resultados para "${query}"</h2>
-    <div class="results">${resultadosHTML}</div>
+    <div class="swiper-container">
+      <div class="swiper-wrapper">
+        ${resultadosHTML}
+      </div>
+      <!-- Add Pagination -->
+      <div class="swiper-pagination"></div>
+    </div>
+    <button class="index">Volver</button>
   `;
 
+  // Inicializar Swiper
+  new Swiper('.swiper-container', {
+    effect: 'coverflow',
+    grabCursor: true,
+    centeredSlides: true,
+    slidesPerView: 'auto',
+    coverflowEffect: {
+      rotate: 50,
+      stretch: 0,
+      depth: 100,
+      modifier: 1,
+      slideShadows: true,
+    },
+    pagination: {
+      el: '.swiper-pagination',
+    },
+  });
+
   // Añadir eventos de clic a los botones "Añadir"
-  document.querySelectorAll('.add-from-api').forEach(button => {
+  document.querySelectorAll('.add-from-api').forEach((button) => {
     button.addEventListener('click', (event) => {
       const pelicula = JSON.parse(event.target.dataset.pelicula);
       addFromAPIContr(pelicula); // Llamar a la función para agregar la película
     });
   });
-
-  // Evento para el botón "Volver"
-  document.querySelector('.index').addEventListener('click', () => {
-    displayMainView(); // Función para mostrar la vista principal
-  });
 };
-
 
 
   
