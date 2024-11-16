@@ -1,23 +1,177 @@
 const TMDB_API_KEY = 'f91debdf958962ba91eb336ae9326030'; // Reemplaza con tu clave de API de TMDb
 
-// Función para renderizar la vista de búsqueda
-function searchView() {
-  const main = document.getElementById('main');
-  main.innerHTML = `
-    <div class="search-container">
-      <h2>Buscar Películas</h2>
-      <input type="text" id="searchInput" placeholder="Ingresa el título de una película..." />
-      <button id="searchButton">Buscar</button>
-      <div id="results"></div>
-    </div>
-  `;
+// VISTAS
 
-  // Event listener para el botón de búsqueda
-  document.getElementById('searchButton').addEventListener('click', searchMovies);
+const indexView = (peliculas) => {
+  let i=0;
+  let view = "";
+
+  while(i < peliculas.length) {
+    view += `
+      <div class="movie">
+         <div class="movie-img">
+              <img class="show" data-my-id="${i}" src="${peliculas[i].miniatura}" onerror="this.src='./files/placeholder.png'; console.error('Error al cargar la imagen: ${peliculas[i].miniatura}')"/>
+              <style>
+              .movie-img img {
+                  display: block;
+                  margin-left: auto;
+                  margin-right: auto;
+              }
+          </style>
+         </div>
+         <div class="title">
+             ${peliculas[i].titulo || "<em>Sin título</em>"}
+         </div>
+         <div class="actions">
+              <button class="show" data-my-id="${i}">ver</button>
+              <button class="edit" data-my-id="${i}">editar</button>
+              <button class="delete" data-my-id="${i}">borrar</button>
+          </div>
+      </div>\n`;
+    i++;
+  };
+
+  view += `<div class="actions">
+              <button class="new">Nueva Película</button>
+              <button class="reset">Reiniciar</button>
+          </div>`;
+
+  return view;
 }
 
-// Función para realizar la búsqueda de películas en la API
-function searchMovies() {
+const editView = (i, pelicula) => {
+  return `<h2>Editar Película </h2>
+      <div class="field">
+      Título <br>
+      <input  type="text" id="titulo" placeholder="Título" 
+              value="${pelicula.titulo}">
+      </div>
+      <div class="field">
+      Director <br>
+      <input  type="text" id="director" placeholder="Director" 
+              value="${pelicula.director}">
+      </div>
+      <div class="field">
+      Miniatura <br>
+      <input  type="text" id="miniatura" placeholder="URL de la miniatura" 
+              value="${pelicula.miniatura}">
+      </div>
+      <div class="actions">
+          <button class="update" data-my-id="${i}">
+              Actualizar
+          </button>
+          <button class="index">
+              Volver
+          </button>
+      </div>`;
+}
+
+const showView = (pelicula) => {
+  // Completar: genera HTML con información de la película
+  // ...
+  return `<h2>${pelicula.titulo}</h2>
+      <p style="text-align: center;"><span style="color: #29b6f6;">DIRECTOR</span>: ${pelicula.director}</p>
+      <div class="movie-img">
+          <img src="${pelicula.miniatura}" alt="Carátula de ${pelicula.titulo}" onerror="this.src='./files/placeholder.png'"/>
+          <style>
+              .movie-img img {
+                  display: block;
+                  margin-left: auto;
+                  margin-right: auto;
+              }
+          </style>
+      </div>
+      <div class="actions">
+          <button class="index">Volver</button>
+      </div>`;
+}
+
+const newView = () => {
+  // Completar: genera formulario para crear nuevo quiz
+  // ...
+  return `
+      <h2>Crear Nueva Película</h2>
+      <div class="field">
+          <label for="titulo">Título</label><br>
+          <input type="text" id="titulo" placeholder="Título de la película">
+      </div>
+      <div class="field">
+          <label for="director">Director</label><br>
+          <input type="text" id="director" placeholder="Director de la película">
+      </div>
+      <div class="field">
+          <label for="miniatura">URL de la Miniatura</label><br>
+          <input type="text" id="miniatura" placeholder="URL de la carátula">
+      </div>
+      <div class="actions">
+          <button class="create">Crear</button>
+          <button class="index">Volver</button>
+      </div>`;
+}
+
+const resultsView = (resultados, query) => {
+  const resultsContainer = document.getElementById('results');
+  
+  if (resultados.length === 0) {
+    resultsContainer.innerHTML = `<p class="no-results">No se encontraron películas para "${query}".</p>`;
+    return;
+  }
+
+  const resultadosHTML = resultados.map(pelicula => {
+    const poster = pelicula.poster_path
+      ? `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`
+      : 'https://via.placeholder.com/200x300?text=No+Image';
+
+    return `
+      <div class="movie">
+        <div class="movie-img">
+          <img src="${poster}" alt="${pelicula.title}" onerror="this.src='./files/placeholder.png'" />
+        </div>
+        <div class="title">${pelicula.title}</div>
+        <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
+        <button class="add-from-api" data-pelicula='${JSON.stringify(pelicula)}'>Añadir</button>
+      </div>
+    `;
+  }).join("");
+
+  // Renderizar el contenido con el botón "Volver" al inicio
+  resultsContainer.innerHTML = `
+    <div class="actions">
+      <button class="index">Volver</button>
+    </div>
+    <h2>Resultados para "${query}"</h2>
+    <div class="results">${resultadosHTML}</div>
+  `;
+
+  // Añadir eventos de clic a los botones "Añadir"
+  document.querySelectorAll('.add-from-api').forEach(button => {
+    button.addEventListener('click', (event) => {
+      const pelicula = JSON.parse(event.target.dataset.pelicula);
+      addFromAPIContr(pelicula); // Llamar a la función para agregar la película
+    });
+  });
+
+  // Evento para el botón "Volver"
+  document.querySelector('.index').addEventListener('click', () => {
+    displayMainView(); // Función para mostrar la vista principal
+  });
+};
+
+
+
+  
+// CONTROLADORES 
+
+const initContr = () => {
+  indexContr();
+}
+
+const indexContr = () => {
+  document.getElementById('main').innerHTML = indexView(mis_peliculas);
+}
+
+// Controlador de búsqueda
+const searchContr = () => {
   const query = document.getElementById('searchInput').value.trim();
   const resultsContainer = document.getElementById('results');
 
@@ -36,37 +190,124 @@ function searchMovies() {
       return response.json();
     })
     .then(data => {
-      displayResults(data.results);
+      resultsView(data.results, query);
     })
     .catch(err => {
       console.error(err);
       resultsContainer.innerHTML = `<p class="error">No se pudo completar la búsqueda. Intenta de nuevo más tarde.</p>`;
     });
+};
+
+
+const showContr = (i) => {
+  const pelicula = mis_peliculas[i];
+  document.getElementById('main').innerHTML = showView(pelicula);
 }
 
-// Función para mostrar los resultados en la interfaz
-function displayResults(results) {
-  const resultsContainer = document.getElementById('results');
-  if (results.length === 0) {
-    resultsContainer.innerHTML = `<p class="no-results">No se encontraron películas para este término de búsqueda.</p>`;
+const newContr = () => {
+  document.getElementById('main').innerHTML = newView();
+}
+
+const createContr = () => {
+  const titulo = document.getElementById('titulo').value;
+  const director = document.getElementById('director').value;
+  const miniatura = document.getElementById('miniatura').value;
+
+  if (titulo && director && miniatura) {
+      mis_peliculas.push({ titulo, director, miniatura });
+      indexContr();
+  } else {
+      alert("Por favor, completa todos los campos antes de crear la película.");
+  }
+}
+
+const editContr = (i) => {
+  document.getElementById('main').innerHTML = editView(i,  mis_peliculas[i]);
+}
+
+const updateContr = (i) => {
+  mis_peliculas[i].titulo   = document.getElementById('titulo').value;
+  mis_peliculas[i].director = document.getElementById('director').value;
+  mis_peliculas[i].miniatura = document.getElementById('miniatura').value;
+  indexContr();
+}
+
+const deleteContr = (i) => {
+  const confirmDelete = confirm("¿Estás seguro de que deseas eliminar esta película?");
+  if (confirmDelete) {
+      mis_peliculas.splice(i, 1);
+      indexContr();
+  }
+}
+
+const resetContr = () => {
+  const confirmReset = confirm("¿Estás seguro de que deseas restaurar el modelo al estado inicial?");
+  if (confirmReset) {
+      mis_peliculas = [...mis_peliculas_iniciales];
+      indexContr();
+  }
+}
+
+// Función para añadir una película desde los resultados de la API
+const addFromAPIContr = (pelicula) => {
+  const existe = mis_peliculas.some(p => p.titulo === pelicula.title);
+  if (existe) {
+    alert("Esta película ya está en tu lista.");
     return;
   }
 
-  const moviesHTML = results.map(movie => {
-    const poster = movie.poster_path 
-      ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` 
-      : 'https://via.placeholder.com/200x300?text=No+Image';
-    return `
-      <div class="movie-card">
-        <img src="${poster}" alt="${movie.title}" />
-        <h3>${movie.title}</h3>
-        <p>${movie.release_date ? movie.release_date : 'Fecha no disponible'}</p>
-        <p>${movie.overview ? movie.overview : 'Sin descripción'}</p>
-      </div>
-    `;
-  }).join('');
+  // Añadir la película a la lista local
+  mis_peliculas.push({
+    titulo: pelicula.title,
+    director: pelicula.director || 'Desconocido',
+    miniatura: `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`,
+  });
 
-  resultsContainer.innerHTML = `<div class="movies-grid">${moviesHTML}</div>`;
+  alert(`${pelicula.title} ha sido añadida a tus películas favoritas.`);
+};
+
+
+
+// ROUTER de eventos
+const matchEvent = (ev, sel) => ev.target.matches(sel)
+const myId = (ev) => Number(ev.target.dataset.myId)
+
+document.addEventListener('click', ev => {
+  if (matchEvent(ev, '.index')) indexContr();
+  else if (matchEvent(ev, '.edit')) editContr(myId(ev));
+  else if (matchEvent(ev, '.update')) updateContr(myId(ev));
+  else if (matchEvent(ev, '.show')) showContr(myId(ev));
+  else if (matchEvent(ev, '.new')) newContr();
+  else if (matchEvent(ev, '.create')) createContr();
+  else if (matchEvent(ev, '.delete')) deleteContr(myId(ev));
+  else if (matchEvent(ev, '.reset')) resetContr();
+  else if (matchEvent(ev, '.search')) searchContr();
+  else if (matchEvent(ev, '.add-from-api')) {
+      const pelicula = JSON.parse(ev.target.dataset.pelicula);
+      addFromAPIContr(pelicula);
+      ev.target.disabled = true; // Deshabilitar el botón temporalmente
+  }
+});
+
+// Inicialización        
+document.addEventListener('DOMContentLoaded', () => {
+  initContr();
+});
+
+// Función para mostrar la vista de búsqueda
+function searchView() {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="search-container">
+      <h2>Buscar Películas</h2>
+      <input type="text" id="searchInput" placeholder="Ingresa el título de una película..." />
+      <button id="searchButton">Buscar</button>
+      <div id="results"></div>
+    </div>
+  `;
+
+  // Event listener para el botón de búsqueda
+  document.getElementById('searchButton').addEventListener('click', searchContr);
 }
 
 // Agregar la opción de búsqueda al inicializar
