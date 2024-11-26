@@ -2,6 +2,51 @@ const TMDB_API_KEY = 'f91debdf958962ba91eb336ae9326030'; // Reemplaza con tu cla
 
 // VISTAS
 
+// Lista personalizada de palabras clave del usuario
+let userKeywords = [];
+
+let mis_peliculas_iniciales = [
+  {titulo: "Superlópez",   director: "Javier Ruiz Caldera", "miniatura": "files/superlopez.png"},
+  {titulo: "Jurassic Park", director: "Steven Spielberg", "miniatura": "files/jurassicpark.png"},
+  {titulo: "Interstellar",  director: "Christopher Nolan", "miniatura": "files/interstellar.png"}
+];
+
+let mis_peliculas = [...mis_peliculas_iniciales];
+
+// Vista de palabras clave asociadas a una película
+const keywordsView = (movieId, keywords) => `
+  <h2>Palabras clave de la película</h2>
+  <ul>
+    ${keywords
+      .map(
+        (keyword) => `
+      <li>
+        ${keyword} <button class="add-keyword" data-keyword="${keyword}">Agregar</button>
+      </li>
+    `
+      )
+      .join("")}
+  </ul>
+  <button class="index">Volver</button>
+`;
+
+// Vista de la lista personalizada de palabras clave del usuario
+const myKeywordsView = () => `
+  <h2>Mis Palabras Clave</h2>
+  <ul>
+    ${userKeywords
+      .map(
+        (keyword, index) => `
+      <li>
+        ${keyword} <button class="remove-keyword" data-index="${index}">Eliminar</button>
+      </li>
+    `
+      )
+      .join("")}
+  </ul>
+  <button class="index">Volver</button>
+`;
+
 const indexView = (peliculas) => {
   let i=0;
   let view = "";
@@ -136,6 +181,7 @@ const resultsView = (resultados, query) => {
             <div class="title">${pelicula.title}</div>
             <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
             <button class="add-from-api" data-pelicula='${JSON.stringify(pelicula)}'>Añadir</button>
+            <button class="show-keywords" data-movie-id="${pelicula.id}">Ver Palabras Clave</button> <!-- Botón nuevo -->
           </div>
         </div>`;
     })
@@ -178,11 +224,71 @@ const resultsView = (resultados, query) => {
       addFromAPIContr(pelicula); // Llamar a la función para agregar la película
     });
   });
+
+  // Añadir eventos a los botones "Ver Palabras Clave"
+  document.querySelectorAll(".show-keywords").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const movieId = event.target.dataset.movieId; // ID de película
+      keywordsContr(movieId); // Llamar a la función para obtener las palabras clave
+    });
+  });
 };
 
 
   
 // CONTROLADORES 
+const keywordsContr = (movieId) => {
+  console.log("Movie ID recibido:", movieId); // Imprime el ID recibido
+  fetchKeywords(movieId)
+    .then((keywords) => {
+      console.log("Palabras clave obtenidas:", keywords); // Imprime el resultado de la API
+      const processedKeywords = processKeywords(keywords);
+      render("#main", keywordsView(movieId, processedKeywords));
+    })
+    .catch((error) => {
+      alert("Error al obtener las palabras clave de la película.");
+      console.error(error);
+    });
+};
+
+
+const myKeywordsContr = () => render("#main", myKeywordsView());
+
+// Función para procesar y limpiar palabras clave
+const processKeywords = (keywords) =>
+  keywords.map((kw) => kw.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+
+// Función para agregar una palabra clave a la lista personalizada
+const addKeywordToList = (keyword) => {
+  if (!userKeywords.includes(keyword)) {
+    userKeywords.push(keyword);
+    alert(`Palabra clave "${keyword}" agregada a tu lista.`);
+  } else {
+    alert("Esta palabra clave ya está en tu lista.");
+  }
+};
+
+// Función para eliminar una palabra clave de la lista personalizada
+const removeKeywordFromList = (index) => {
+  userKeywords.splice(index, 1);
+  myKeywordsContr();
+};
+
+// Función para obtener palabras clave desde la API de TMDb
+const fetchKeywords = async (movieId) => {
+  const apiKey = "TU_API_KEY"; // Reemplaza con tu clave de API real
+  const url = `https://api.themoviedb.org/3/movie/${movieId}/keywords?api_key=${apiKey}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener las palabras clave: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.keywords; // TMDB devuelve las palabras clave dentro del campo "keywords"
+};
+
 
 const initContr = () => {
   indexContr();
@@ -272,6 +378,10 @@ const resetContr = () => {
 
 // Función para añadir una película desde los resultados de la API
 const addFromAPIContr = (pelicula) => {
+  if (!pelicula || !pelicula.title) {
+    alert("Error: Película no válida.");
+    return;
+  }
   const existe = mis_peliculas.some(p => p.titulo === pelicula.title);
   if (existe) {
     alert("Esta película ya está en tu lista.");
@@ -282,11 +392,15 @@ const addFromAPIContr = (pelicula) => {
   mis_peliculas.push({
     titulo: pelicula.title,
     director: pelicula.director || 'Desconocido',
-    miniatura: `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`,
+    miniatura: pelicula.poster_path
+      ? `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`
+      : './files/placeholder.png',
   });
 
   alert(`${pelicula.title} ha sido añadida a tus películas favoritas.`);
+  indexContr(); // Actualizar la vista de índice
 };
+
 
 
 
@@ -308,6 +422,15 @@ document.addEventListener('click', ev => {
       const pelicula = JSON.parse(ev.target.dataset.pelicula);
       addFromAPIContr(pelicula);
       ev.target.disabled = true; // Deshabilitar el botón temporalmente
+  }
+  else if (matchEvent(ev, ".keywords")) keywordsContr(myId(ev));
+  else if (matchEvent(ev, ".my-keywords")) myKeywordsContr();
+  else if (matchEvent(ev, ".add-keyword")) {
+    const keyword = ev.target.dataset.keyword;
+    addKeywordToList(keyword);
+  } else if (matchEvent(ev, ".remove-keyword")) {
+    const index = parseInt(ev.target.dataset.index, 10);
+    removeKeywordFromList(index);
   }
 });
 

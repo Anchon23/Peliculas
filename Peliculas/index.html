@@ -15,21 +15,7 @@
     <!-- Anime.js -->
     <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
 
-    <script type="text/javascript">
-
-        // MODELO DE DATOS
-
-        let mis_peliculas_iniciales = [
-           {titulo: "Superlópez",   director: "Javier Ruiz Caldera", "miniatura": "files/superlopez.png"},
-           {titulo: "Jurassic Park", director: "Steven Spielberg", "miniatura": "files/jurassicpark.png"},
-           {titulo: "Interstellar",  director: "Christopher Nolan", "miniatura": "files/interstellar.png"}
-        ];
-
-        let mis_peliculas = [...mis_peliculas_iniciales];        
-    </script>
-
 </head>
-
 
 <body>
     <h1 id="header">Mis Películas Favoritas</h1>
@@ -54,9 +40,17 @@
             <input type="text" id="search" placeholder="Buscar película por título o director">
             <button class="search">Buscar Películas</button>
         </div>
+
         <!-- Aquí pueden aparecer las películas encontradas, por ejemplo -->
-        <div id="resultados"></div>
+        <div id="content"></div>
+
+         <!-- Navegación entre vistas -->
+         <div class="navigation">
+            <button class="keywords">Ver Palabras Clave</button>
+            <button class="my-keywords">Mis Palabras Clave</button>
+        </div>
     </div>
+
     <script>
         // Esperar a que el DOM esté completamente cargado antes de ejecutar la animación
         document.addEventListener('DOMContentLoaded', function() {
