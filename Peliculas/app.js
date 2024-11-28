@@ -2,9 +2,6 @@ const TMDB_API_KEY = 'f91debdf958962ba91eb336ae9326030'; // Reemplaza con tu cla
 
 // VISTAS
 
-// Lista personalizada de palabras clave del usuario
-let userKeywords = [];
-
 let mis_peliculas_iniciales = [
   {titulo: "Superlópez",   director: "Javier Ruiz Caldera", "miniatura": "files/superlopez.png"},
   {titulo: "Jurassic Park", director: "Steven Spielberg", "miniatura": "files/jurassicpark.png"},
@@ -13,39 +10,90 @@ let mis_peliculas_iniciales = [
 
 let mis_peliculas = [...mis_peliculas_iniciales];
 
-// Vista de palabras clave asociadas a una película
-const keywordsView = (movieId, keywords) => `
-  <h2>Palabras clave de la película</h2>
-  <ul>
-    ${keywords
-      .map(
-        (keyword) => `
-      <li>
-        ${keyword} <button class="add-keyword" data-keyword="${keyword}">Agregar</button>
-      </li>
-    `
-      )
-      .join("")}
-  </ul>
-  <button class="index">Volver</button>
-`;
+const genreIDs = {
+  "Drama": 18,  // ID para "Drama" según la API de TMDB
+  "Comedia": 35,  // ID para "Comedia"
+  "Acción": 28,  // ID para "Acción"
+  "Aventura": 12,  // ID para "Aventura"
+  "Ciencia Ficción": 878,  // ID para "Ciencia Ficción"
+  "Fantasía": 14,  // ID para "Fantasía"
+  "Animación": 16,  // ID para "Animación"
+  "Crimen": 80,  // ID para "Crimen"
+  "Misterio": 9648,  // ID para "Misterio"
+  "Suspense": 53,  // ID para "Suspense"
+  "Terror": 27,  // ID para "Terror"
+  "Documental": 99,  // ID para "Documental"
+  "Música": 10402,  // ID para "Música"
+  "Romance": 10749,  // ID para "Romance"
+  "Familia": 10751,  // ID para "Familia"
+  "Guerra": 10752,  // ID para "Guerra"
+  // Añade otros géneros aquí si es necesario
+};
 
-// Vista de la lista personalizada de palabras clave del usuario
-const myKeywordsView = () => `
-  <h2>Mis Palabras Clave</h2>
-  <ul>
-    ${userKeywords
-      .map(
-        (keyword, index) => `
-      <li>
-        ${keyword} <button class="remove-keyword" data-index="${index}">Eliminar</button>
-      </li>
-    `
-      )
-      .join("")}
-  </ul>
-  <button class="index">Volver</button>
-`;
+
+// Vista de palabras clave asociadas a una película
+const keywordsView = (movieId) => {
+  const keywords = [
+    { id: 1, name: "Aventura" },
+    { id: 2, name: "Ciencia Ficción" },
+    { id: 3, name: "Acción" },
+    { id: 4, name: "Drama" }
+  ]; // Esto debería ser reemplazado por una llamada a la API para obtener las palabras clave
+  const processedKeywords = processKeywords(keywords);
+
+  return `
+    <h2>Palabras Clave</h2>
+    <div class="keywords-container">
+      ${processedKeywords.map(keyword => `
+        <div class="keyword">
+          <span>${keyword}</span>
+          <button class="add-keyword" data-keyword="${keyword}">Añadir</button>
+        </div>
+      `).join('')}
+    </div>
+    <button class="index">Volver</button>
+  `;
+}
+
+const processKeywords = (keywords) => {
+  return keywords.map(k => k.name.replace(/[^a-zA-Z0-9\s]/g, '').trim());
+}
+
+let myKeywords = [];
+
+const addKeywordToList = (keyword) => {
+  if (!myKeywords.includes(keyword)) {
+    myKeywords.push(keyword);
+    alert(`La palabra clave "${keyword}" ha sido añadida a tu lista.`);
+  } else {
+    alert(`La palabra clave "${keyword}" ya está en tu lista.`);
+  }
+}
+
+const myKeywordsView = () => {
+  return `
+    <h2>Mis Palabras Clave</h2>
+    <div class="keywords-list">
+      ${myKeywords.length > 0 ? myKeywords.map((keyword, index) => `
+        <div class="keyword">
+          <span>${keyword}</span>
+          <button class="remove-keyword" data-index="${index}">Eliminar</button>
+        </div>
+      `).join('') : '<p>No tienes palabras clave en tu lista.</p>'}
+    </div>
+    <button class="index">Volver</button>
+  `;
+}
+
+// Mostrar peliculas por palabras clave de myKeywordsView
+const searchByKeywords = () => {
+  const results = mis_peliculas.filter(pelicula => {
+    const titulo = pelicula.titulo.toLowerCase();
+    return myKeywords.some(keyword => titulo.includes(keyword.toLowerCase()));
+  });
+
+  document.getElementById('main').innerHTML = indexView(results);
+}
 
 const indexView = (peliculas) => {
   let i=0;
@@ -181,7 +229,6 @@ const resultsView = (resultados, query) => {
             <div class="title">${pelicula.title}</div>
             <div class="overview">${pelicula.overview || "Sin descripción disponible."}</div>
             <button class="add-from-api" data-pelicula='${JSON.stringify(pelicula)}'>Añadir</button>
-            <button class="show-keywords" data-movie-id="${pelicula.id}">Ver Palabras Clave</button> <!-- Botón nuevo -->
           </div>
         </div>`;
     })
@@ -224,71 +271,11 @@ const resultsView = (resultados, query) => {
       addFromAPIContr(pelicula); // Llamar a la función para agregar la película
     });
   });
-
-  // Añadir eventos a los botones "Ver Palabras Clave"
-  document.querySelectorAll(".show-keywords").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const movieId = event.target.dataset.movieId; // ID de película
-      keywordsContr(movieId); // Llamar a la función para obtener las palabras clave
-    });
-  });
 };
 
 
   
 // CONTROLADORES 
-const keywordsContr = (movieId) => {
-  console.log("Movie ID recibido:", movieId); // Imprime el ID recibido
-  fetchKeywords(movieId)
-    .then((keywords) => {
-      console.log("Palabras clave obtenidas:", keywords); // Imprime el resultado de la API
-      const processedKeywords = processKeywords(keywords);
-      render("#main", keywordsView(movieId, processedKeywords));
-    })
-    .catch((error) => {
-      alert("Error al obtener las palabras clave de la película.");
-      console.error(error);
-    });
-};
-
-
-const myKeywordsContr = () => render("#main", myKeywordsView());
-
-// Función para procesar y limpiar palabras clave
-const processKeywords = (keywords) =>
-  keywords.map((kw) => kw.name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-
-// Función para agregar una palabra clave a la lista personalizada
-const addKeywordToList = (keyword) => {
-  if (!userKeywords.includes(keyword)) {
-    userKeywords.push(keyword);
-    alert(`Palabra clave "${keyword}" agregada a tu lista.`);
-  } else {
-    alert("Esta palabra clave ya está en tu lista.");
-  }
-};
-
-// Función para eliminar una palabra clave de la lista personalizada
-const removeKeywordFromList = (index) => {
-  userKeywords.splice(index, 1);
-  myKeywordsContr();
-};
-
-// Función para obtener palabras clave desde la API de TMDb
-const fetchKeywords = async (movieId) => {
-  const apiKey = "TU_API_KEY"; // Reemplaza con tu clave de API real
-  const url = `https://api.themoviedb.org/3/movie/${movieId}/keywords?api_key=${apiKey}`;
-
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Error al obtener las palabras clave: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return data.keywords; // TMDB devuelve las palabras clave dentro del campo "keywords"
-};
-
 
 const initContr = () => {
   indexContr();
@@ -378,10 +365,6 @@ const resetContr = () => {
 
 // Función para añadir una película desde los resultados de la API
 const addFromAPIContr = (pelicula) => {
-  if (!pelicula || !pelicula.title) {
-    alert("Error: Película no válida.");
-    return;
-  }
   const existe = mis_peliculas.some(p => p.titulo === pelicula.title);
   if (existe) {
     alert("Esta película ya está en tu lista.");
@@ -392,16 +375,11 @@ const addFromAPIContr = (pelicula) => {
   mis_peliculas.push({
     titulo: pelicula.title,
     director: pelicula.director || 'Desconocido',
-    miniatura: pelicula.poster_path
-      ? `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`
-      : './files/placeholder.png',
+    miniatura: `https://image.tmdb.org/t/p/w200${pelicula.poster_path}`,
   });
 
   alert(`${pelicula.title} ha sido añadida a tus películas favoritas.`);
-  indexContr(); // Actualizar la vista de índice
 };
-
-
 
 
 // ROUTER de eventos
@@ -418,21 +396,35 @@ document.addEventListener('click', ev => {
   else if (matchEvent(ev, '.delete')) deleteContr(myId(ev));
   else if (matchEvent(ev, '.reset')) resetContr();
   else if (matchEvent(ev, '.search')) searchContr();
+  else if (matchEvent(ev, '.search-by-keywords')) searchByKeywords();
   else if (matchEvent(ev, '.add-from-api')) {
       const pelicula = JSON.parse(ev.target.dataset.pelicula);
       addFromAPIContr(pelicula);
       ev.target.disabled = true; // Deshabilitar el botón temporalmente
   }
-  else if (matchEvent(ev, ".keywords")) keywordsContr(myId(ev));
-  else if (matchEvent(ev, ".my-keywords")) myKeywordsContr();
-  else if (matchEvent(ev, ".add-keyword")) {
-    const keyword = ev.target.dataset.keyword;
-    addKeywordToList(keyword);
-  } else if (matchEvent(ev, ".remove-keyword")) {
-    const index = parseInt(ev.target.dataset.index, 10);
-    removeKeywordFromList(index);
+  else if (matchEvent(ev, '.add-keyword')) {
+      const keyword = ev.target.dataset.keyword;
+      addKeywordToList(keyword);
+  }
+  else if (matchEvent(ev, '.search-by-keywords')) {
+    searchByKeywords();
+  }
+  else if (matchEvent(ev, '.remove-keyword')) {
+      const index = myId(ev);
+      myKeywords.splice(index, 1);
+      myKeywordsView(); // Actualizar la vista de palabras clave
   }
 });
+
+// Función para mostrar la vista de palabras clave de una película
+const showKeywordsContr = (movieId) => {
+  document.getElementById('main').innerHTML = keywordsView(movieId);
+}
+
+// Función para mostrar la vista de mis palabras clave
+const showMyKeywordsContr = () => {
+  document.getElementById('main').innerHTML = myKeywordsView();
+}
 
 // Inicialización        
 document.addEventListener('DOMContentLoaded', () => {
@@ -461,5 +453,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchButton = document.createElement('button');
   searchButton.textContent = 'Buscar Películas';
   searchButton.addEventListener('click', searchView);
+  main.parentNode.insertBefore(searchButton, main);
+});
+
+// Agregar la opción de búsqueda palabra clave al inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  const main = document.getElementById('main');
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Mis Palabras Clave';
+  searchButton.addEventListener('click', showMyKeywordsContr);
+  main.parentNode.insertBefore(searchButton, main);
+});
+
+// Agregar la opción de búsqueda palabra clave al inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  const main = document.getElementById('main');
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Palabras Clave';
+  searchButton.addEventListener('click', () => showKeywordsContr(550)); // ID de película de ejemplo
+  main.parentNode.insertBefore(searchButton, main);
+});
+
+// Agregar la opción de búsqueda palabra clave al inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  const main = document.getElementById('main');
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Mis Películas';
+  searchButton.addEventListener('click', indexContr);
   main.parentNode.insertBefore(searchButton, main);
 });
