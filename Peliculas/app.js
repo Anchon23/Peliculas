@@ -1,5 +1,3 @@
-const TMDB_API_KEY = 'f91debdf958962ba91eb336ae9326030'; // Reemplaza con tu clave de API de TMDb
-
 // VISTAS
 
 let mis_peliculas_iniciales = [
@@ -10,6 +8,7 @@ let mis_peliculas_iniciales = [
 
 let mis_peliculas = [...mis_peliculas_iniciales];
 
+const TMDB_API_KEY = 'f91debdf958962ba91eb336ae9326030';
 
 const genreIDs = {
   "Drama": 18,
@@ -115,55 +114,123 @@ const myKeywordsView = () => {
 
 
 // Función para buscar películas por las palabras clave
-const searchMoviesByKeywords = () => {
-  if (myKeywords.length === 0) {
-    alert("Por favor, agrega algunas palabras clave antes de buscar.");
+const searchMoviesByKeywords = async () => {
+  const genres = await getGenres();
+
+  if (!genres) {
+    alert("Error al cargar géneros.");
     return;
   }
 
-  // Crear una cadena de palabras clave separadas por comas
-  const keywordsString = myKeywords.map(keyword => keyword.name).join(',');
-
-  // Mostrar la URL generada en la consola para depuración
-  console.log("Buscando con las palabras clave:", keywordsString);
-
-  // Crear la URL de la solicitud para buscar películas por palabras clave
-  const apiUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(keywordsString)}`;
-
-  // Realizar la llamada a la API
-  fetch(apiUrl)
-    .then(response => response.json())
-    .then(data => {
-      console.log("Respuesta de la API:", data);  // Depurar la respuesta de la API
-
-      if (data.results && data.results.length > 0) {
-        displayMovies(data.results); // Mostrar las películas encontradas
-      } else {
-        alert("No se encontraron películas con esas palabras clave.");
-      }
+  // Obtener los IDs de género de las palabras clave
+  const genreIds = myKeywords
+    .map(keyword => {
+      const genre = genres.find(g => g.name.toLowerCase() === keyword.name.toLowerCase());
+      return genre ? genre.id : null;
     })
-    .catch(error => {
-      console.error("Error al buscar películas:", error);
-      alert("Hubo un error al realizar la búsqueda.");
-    });
-}
+    .filter(id => id !== null);  // Filtrar los géneros no encontrados
 
+  if (genreIds.length === 0) {
+    alert("No se encontraron géneros válidos en las palabras clave.");
+    return;
+  }
+
+  // Construir la URL de búsqueda con IDs de géneros
+  const apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreIds.join(',')}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.results && data.results.length > 0) {
+      displayMovies(data.results);  // Mostrar películas encontradas
+    } else {
+      alert("No se encontraron películas con esos géneros.");
+    }
+  } catch (error) {
+    console.error("Error al buscar películas por géneros:", error);
+    alert("Hubo un error al realizar la búsqueda.");
+  }
+};
+
+// Función para obtener los géneros disponibles y sus IDs
+const getGenres = async () => {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${TMDB_API_KEY}&language=es-ES`);
+    const data = await response.json();
+    return data.genres;  // Retorna la lista de géneros con ID y nombre
+  } catch (error) {
+    console.error("Error al obtener géneros:", error);
+  }
+};
 
 // Función para mostrar las películas encontradas
-const displayMovies = (movies) => {
+const displayMovies = (movies, query) => {
   const main = document.getElementById('main');
+
+  if (movies.length === 0) {
+    main.innerHTML = `<p class="no-results">No se encontraron películas para "${query}".</p>`;
+    return;
+  }
+
+  const movieSlides = movies
+    .map((movie) => {
+      const poster = movie.poster_path
+        ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
+        : 'https://via.placeholder.com/300x450?text=No+Image';
+
+      const background = movie.poster_path
+        ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
+        : 'https://via.placeholder.com/1920x1080?text=No+Image';
+
+      return `
+        <div class="swiper-slide" style="background-image: url('${background}');">
+          <div class="movie-details">
+            <img class="movie-poster" src="${poster}" alt="${movie.title}" />
+            <h3>${movie.title}</h3>
+            <p>${movie.overview || "Sin descripción disponible."}</p>
+          </div>
+        </div>`;
+    })
+    .join('');
+
   main.innerHTML = `
-    <h2>Películas encontradas</h2>
-    <ul>
-      ${movies.map(movie => `
-        <li>
-          <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" alt="${movie.title}">
-          <p>${movie.title}</p>
-        </li>
-      `).join('')}
-    </ul>
+    <h2>Resultados para "${query}"</h2>
+    <div class="swiper-container">
+      <div class="swiper-wrapper">
+        ${movieSlides}
+      </div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
+    </div>
   `;
-}
+
+  // Inicializar Swiper
+  new Swiper('.swiper-container', {
+    effect: 'coverflow',
+    grabCursor: true,
+    centeredSlides: true,
+    slidesPerView: 'auto',
+    coverflowEffect: {
+      rotate: 50,
+      stretch: 0,
+      depth: 200,
+      modifier: 1,
+      slideShadows: true,
+    },
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+  });
+};
+
+
 
 // Función para manejar la visualización de palabras clave
 const showMyKeywordsContr = () => {
@@ -187,7 +254,6 @@ const showMyKeywordsContr = () => {
     });
   });
 }
-
 
 const genresView = () => {
   return `
