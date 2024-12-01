@@ -26,7 +26,6 @@ const genreIDs = {
   "Música": 10402,
   "Romance": 10749,
   "Familia": 10751,
-  "Guerra": 10752,
 };
 
 // Asegúrate de que myKeywords esté definido
